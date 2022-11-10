@@ -3,19 +3,31 @@ import { AuthContext } from '../../contexts/AuthProvider/AuthProvider';
 import OrderRow from './OrderRow';
 
 const Orders = () => {
-    const { user } = useContext(AuthContext)
+    const { user, logout } = useContext(AuthContext)
     const [orders, setOrders] = useState([])
 
     useEffect(() => {
-        fetch(`http://localhost:5000/orders?email=${user?.email}`)
-            .then(res => res.json())
-            .then(data => setOrders(data))
-    }, [user?.email])
+        fetch(`https://genious-car-server.vercel.app/orders?email=${user?.email}`, {
+            headers: {
+                authorization: `Bearer ${localStorage.getItem('genious-token')}`
+            }
+        })
+            .then(res => {
+                if (res.status === 401 || res.status === 4 - 3) {
+                    return logout()
+                }
+                return res.json()
+            })
+            .then(data => {
+                // console.log('received', data);
+                setOrders(data)
+            })
+    }, [user?.email, logout])
 
     const handleDelete = id => {
         const proceed = window.confirm('are you sure to cancel this order')
         if (proceed) {
-            fetch(`http://localhost:5000/orders/${id}`, {
+            fetch(`https://genious-car-server.vercel.app/orders/${id}`, {
                 method: 'DELETE'
             })
                 .then(res => res.json())
@@ -31,7 +43,7 @@ const Orders = () => {
     }
 
     const handleStatusUpdate = id => {
-        fetch(`http://localhost:5000/orders/${id}`, {
+        fetch(`https://genious-car-server.vercel.app/orders/${id}`, {
             method: 'PATCH',
             headers: {
                 'content-type': 'application/json'
